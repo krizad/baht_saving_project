@@ -746,6 +746,30 @@
             }
             return false;
         }
+        function showMemberDetail(id) {
+            // ดึงข้อมูลสมาชิกจาก API แล้วแสดงในฟอร์ม detail
+            fetch(withSession(APP_SCRIPT_URL + "?action=get_member&id=" + encodeURIComponent(id)))
+                .then(r => r.json())
+                .then(res => {
+                    if (handleApiError(res)) return;
+                    if (res.success && res.member) {
+                        document.getElementById("detail-id").value = res.member.id;
+                        document.getElementById("detail-id-show").value = res.member.id;
+                        document.getElementById("detail-moo").value = res.member.moo || '';
+                        document.getElementById("detail-name").value = res.member.name || '';
+                        document.getElementById("detail-dob").value = res.member.dob || '';
+                        document.getElementById("detail-age").value = res.member.age || '';
+                        document.getElementById("detail-regdate").value = res.member.regdate || '';
+                        document.getElementById("detail-memberage").value = res.member.memberAge || '';
+                        document.getElementById("detail-status").value = res.member.status || 'เป็นสมาชิก';
+                        document.getElementById("detail-carry").value = res.member.carry || 0;
+                        document.getElementById("detail-note").value = res.member.note || '';
+                        showSection('member-detail');
+                    } else {
+                        showAlertModal(res.message || 'ไม่พบข้อมูลสมาชิก');
+                    }
+                });
+        }
     </script>
 </body>
 
