@@ -734,6 +734,18 @@
                 showSection("login");
             }
         }
+
+        // --- Handle API Unauthorized Error ---
+        function handleApiError(res) {
+            if (res && res.message && res.message.includes('Unauthorized: invalid session')) {
+                localStorage.removeItem('user');
+                SESSION_ID = null;
+                showSection('login');
+                alert('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');
+                return true;
+            }
+            return false;
+        }
     </script>
 </body>
 
