@@ -440,6 +440,7 @@
             fetch(withSession(APP_SCRIPT_URL + "?action=get_members&search=" + encodeURIComponent(search)))
                 .then(r => r.json())
                 .then(res => {
+                    if (handleApiError(res)) return;
                     tbody.innerHTML = "";
                     if (res.success && res.members.length) {
                         membersData = res.members;
@@ -485,6 +486,7 @@
             fetch(withSession(APP_SCRIPT_URL + "?action=get_deposits&monthYear=" + encodeURIComponent(monthYear)))
                 .then(r => r.json())
                 .then(res => {
+                    if (handleApiError(res)) return;
                     tbody.innerHTML = "";
                     if (!res.success) {
                         showAlertModal("เกิดข้อผิดพลาดในการโหลดข้อมูล");
@@ -528,6 +530,7 @@
             fetch(withSession(APP_SCRIPT_URL + "?action=summary"))
                 .then(r => r.json())
                 .then(res => {
+                    if (handleApiError(res)) return;
                     tbody.innerHTML = "";
                     if (res.success && res.summary.length) {
                         summaryData = res.summary;
@@ -651,6 +654,7 @@
             fetch(withSession(APP_SCRIPT_URL + "?action=deposit&id=" + encodeURIComponent(id) + "&monthYear=" + encodeURIComponent(monthYear)))
                 .then(r => r.json())
                 .then(res => {
+                    if (handleApiError(res)) return;
                     if (res.success) {
                         btn.classList.remove("btn-primary");
                         btn.classList.add("btn-success");
@@ -710,11 +714,22 @@
             fillYearDropdown();
             const navbar = document.getElementById("main-navbar");
             const user = localStorage.getItem("user");
+            let validSession = false;
             if (user) {
-                try { SESSION_ID = JSON.parse(user).sessionId; } catch { }
+                try {
+                    const parsed = JSON.parse(user);
+                    if (parsed.sessionId && typeof parsed.sessionId === 'string' && parsed.sessionId.length > 10) {
+                        SESSION_ID = parsed.sessionId;
+                        validSession = true;
+                    }
+                } catch { }
+            }
+            if (validSession) {
                 navbar.style.display = "";
                 showSection("members");
             } else {
+                localStorage.removeItem("user");
+                SESSION_ID = null;
                 navbar.style.display = "none";
                 showSection("login");
             }
