@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <title>โครงการฝากเงินวันละบาท</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/piggy-bank.svg">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background: #f8fafc;
+            color: #222;
+        }
+
+        .navbar {
+            background: #1565c0;
+        }
+
+        .navbar-brand,
+        .nav-link,
+        .navbar-text {
+            color: #fff !important;
+            font-weight: 600;
+        }
+
+        .section-header {
+            background: #e3f2fd;
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .card {
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px #0001;
+            margin-bottom: 2rem;
+        }
+
+        .btn-primary {
+            background: #1565c0;
+            border: none;
+        }
+
+        .btn-primary:disabled {
+            background: #90caf9;
+            color: #fff;
+        }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .table thead {
+            background: #e3f2fd;
+        }
+
+        .icon {
+            font-size: 1.5rem;
+            vertical-align: middle;
+        }
+
+        .bg-alt {
+            background: #f1f8ff;
+        }
+
+        .emoji {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 600px) {
+            .section-header {
+                font-size: 1rem;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg mb-4" id="main-navbar" style="display:none;">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="bi bi-piggy-bank icon"></i> โครงการฝากเงินวันละบาท</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                title="เปิด/ปิดเมนูนำทาง" aria-label="เปิด/ปิดเมนูนำทาง">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0" id="navMenu">
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('members')"><i
+                                class="bi bi-people"></i> สมาชิก</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('deposit')"><i
+                                class="bi bi-cash-coin"></i> ฝากเงิน</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('summary')"><i
+                                class="bi bi-bar-chart"></i> สรุปยอด</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="logout()"><i
+                                class="bi bi-box-arrow-right"></i> ออกจากระบบ</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container" style="max-width: 700px;">
+        <!-- Login Section -->
+        <div id="section-login">
+            <div class="section-header"><span class="emoji">🔐</span> เข้าสู่ระบบ</div>
+            <div class="card p-4">
+                <form id="loginForm" onsubmit="return login(event)">
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-person"></i> ชื่อผู้ใช้</label>
+                        <input type="text" class="form-control" id="login-username" required
+                            placeholder="กรอกชื่อผู้ใช้" title="ชื่อผู้ใช้">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-key"></i> รหัสผ่าน</label>
+                        <input type="password" class="form-control" id="login-password" required
+                            placeholder="กรอกรหัสผ่าน" title="รหัสผ่าน">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-box-arrow-in-right"></i>
+                        เข้าสู่ระบบ</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Members List Section -->
+        <div id="section-members" style="display:none;">
+            <div class="section-header"><span class="emoji">👥</span> รายชื่อสมาชิก
+                <button class="btn btn-sm btn-outline-primary ms-auto" onclick="showSection('add-member')"><i
+                        class="bi bi-person-plus"></i> เพิ่มสมาชิก</button>
+            </div>
+            <div class="card p-3">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="search-member"
+                        placeholder="ค้นหาเลขที่สมาชิก หรือ ชื่อ-นามสกุล" oninput="loadMembers()">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>เลขที่</th>
+                                <th>ชื่อ-นามสกุล</th>
+                                <th>หมู่ที่</th>
+                                <th>ดูข้อมูล</th>
+                            </tr>
+                        </thead>
+                        <tbody id="members-table"></tbody>
+                    </table>
+                    <div id="members-pagination" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Member Detail/Edit Section -->
+        <div id="section-member-detail" style="display:none;">
+            <div class="section-header"><span class="emoji">📝</span> ข้อมูลสมาชิก</div>
+            <div class="card p-4">
+                <form id="memberDetailForm" onsubmit="return saveMemberDetail(event)">
+                    <input type="hidden" id="detail-id">
+                    <div class="mb-2">
+                        <label class="form-label">เลขที่สมาชิก</label>
+                        <input type="text" class="form-control" id="detail-id-show" disabled>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">หมู่ที่</label>
+                        <input type="text" class="form-control" id="detail-moo">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">ชื่อ-นามสกุล</label>
+                        <input type="text" class="form-control" id="detail-name">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">วันเกิด</label>
+                        <input type="date" class="form-control" id="detail-dob">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">อายุ</label>
+                        <input type="text" class="form-control" id="detail-age" disabled>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">วันที่สมัคร</label>
+                        <input type="date" class="form-control" id="detail-regdate">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">อายุสมาชิก</label>
+                        <input type="text" class="form-control" id="detail-memberage" disabled>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">สถานะสมาชิก</label>
+                        <select class="form-select" id="detail-status">
+                            <option value="เป็นสมาชิก">เป็นสมาชิก</option>
+                            <option value="ลาออก">ลาออก</option>
+                            <option value="เสียชีวิต">เสียชีวิต</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">ยอดยกมา</label>
+                        <input type="number" class="form-control" id="detail-carry">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">หมายเหตุ</label>
+                        <input type="text" class="form-control" id="detail-note">
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary flex-fill"><i class="bi bi-save"></i>
+                            บันทึกข้อมูล</button>
+                        <button type="button" class="btn btn-outline-secondary flex-fill"
+                            onclick="showSection('members')"><i class="bi bi-arrow-left"></i> ย้อนกลับ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Member Section -->
+        <div id="section-add-member" style="display:none;">
+            <div class="section-header"><span class="emoji">➕</span> เพิ่มสมาชิกใหม่</div>
+            <div class="card p-4">
+                <form id="addMemberForm" onsubmit="return addMember(event)">
+                    <div class="mb-2">
+                        <label class="form-label">เลขที่สมาชิก</label>
+                        <input type="text" class="form-control" id="add-id" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">หมู่ที่</label>
+                        <input type="text" class="form-control" id="add-moo" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">ชื่อ-นามสกุล</label>
+                        <input type="text" class="form-control" id="add-name" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">วันเกิด</label>
+                        <input type="date" class="form-control" id="add-dob" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">วันที่สมัคร</label>
+                        <input type="date" class="form-control" id="add-regdate" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">สถานะสมาชิก</label>
+                        <select class="form-select" id="add-status">
+                            <option value="เป็นสมาชิก">เป็นสมาชิก</option>
+                            <option value="ลาออก">ลาออก</option>
+                            <option value="เสียชีวิต">เสียชีวิต</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">ยอดยกมา</label>
+                        <input type="number" class="form-control" id="add-carry" value="0">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">หมายเหตุ</label>
+                        <input type="text" class="form-control" id="add-note">
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary flex-fill"><i class="bi bi-save"></i>
+                            บันทึกข้อมูล</button>
+                        <button type="button" class="btn btn-outline-secondary flex-fill"
+                            onclick="showSection('members')"><i class="bi bi-arrow-left"></i> ย้อนกลับ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Deposit Section -->
+        <div id="section-deposit" style="display:none;">
+            <div class="section-header"><span class="emoji">💸</span> ฝากเงินประจำเดือน</div>
+            <div class="card p-4">
+                <form class="row g-2 mb-3" onsubmit="return false;">
+                    <div class="col-6">
+                        <label class="form-label">เดือน</label>
+                        <select class="form-select" id="deposit-month" onchange="loadDepositTable()">
+                            <option value="01">มกราคม</option>
+                            <option value="02">กุมภาพันธ์</option>
+                            <option value="03">มีนาคม</option>
+                            <option value="04">เมษายน</option>
+                            <option value="05">พฤษภาคม</option>
+                            <option value="06">มิถุนายน</option>
+                            <option value="07">กรกฎาคม</option>
+                            <option value="08">สิงหาคม</option>
+                            <option value="09">กันยายน</option>
+                            <option value="10">ตุลาคม</option>
+                            <option value="11">พฤศจิกายน</option>
+                            <option value="12">ธันวาคม</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">ปี</label>
+                        <select class="form-select" id="deposit-year" onchange="loadDepositTable()"></select>
+                    </div>
+                </form>
+                <div class="table-responsive">
+                    <div class="mb-2 text-end">
+                        <span id="deposit-amount-label" class="fw-bold"></span>
+                    </div>
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>เลขที่</th>
+                                <th>ชื่อ-นามสกุล</th>
+                                <th>หมู่ที่</th>
+                                <th>ฝากเงิน</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deposit-table"></tbody>
+                    </table>
+                    <div id="deposit-pagination" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Section -->
+        <div id="section-summary" style="display:none;">
+            <div class="section-header"><span class="emoji">📊</span> สรุปยอดเงินฝากแต่ละเดือน</div>
+            <div class="card p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>เดือน</th>
+                                <th class="text-end">ยอดฝากรวม (บาท)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-table"></tbody>
+                        <tfoot>
+                            <tr>
+                                <th>รวมทั้งหมด</th>
+                                <th class="text-end" id="summary-total"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <div id="summary-pagination" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Main JS -->
+    <script>
+        // === CONFIG ===
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKZw5MaTrY_ge2_pxiSUT1ugwL_qqZgxOEbMbnNjkfaEYX4PMnSHca_srtVbki0xtY/exec";
+        let SESSION_ID = null;
+
+        // === UI Section Control ===
+        function showSection(section) {
+            const navbar = document.getElementById("main-navbar");
+            if (section !== "login" && !localStorage.getItem("user")) {
+                navbar.style.display = "none";
+                showSection("login");
+                return;
+            }
+            if (section === "login") {
+                navbar.style.display = "none";
+            } else {
+                navbar.style.display = "";
+            }
+            const sections = [
+                "login", "members", "member-detail", "add-member", "deposit", "summary"
+            ];
+            sections.forEach(s => {
+                document.getElementById("section-" + s).style.display = (s === section) ? "" : "none";
+            });
+            // Navbar active
+            document.querySelectorAll("#navMenu .nav-link").forEach(link => link.classList.remove("active"));
+            if (section === "members") document.querySelectorAll("#navMenu .nav-link")[0].classList.add("active");
+            if (section === "deposit") document.querySelectorAll("#navMenu .nav-link")[1].classList.add("active");
+            if (section === "summary") document.querySelectorAll("#navMenu .nav-link")[2].classList.add("active");
+            if (section === "login") document.querySelectorAll("#navMenu .nav-link").forEach(link => link.classList.remove("active"));
+            if (section === "members") loadMembers();
+            if (section === "deposit") loadDepositTable();
+            if (section === "summary") loadSummary();
+        }
+
+        // === Auth ===
+        function login(event) {
+            event.preventDefault();
+            const username = document.getElementById("login-username").value.trim();
+            const password = btoa(document.getElementById("login-password").value.trim());
+            fetch(APP_SCRIPT_URL + "?action=login&username=" + encodeURIComponent(username) + "&password=" + encodeURIComponent(password))
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success && res.sessionId) {
+                        localStorage.setItem("user", JSON.stringify(res));
+                        SESSION_ID = res.sessionId;
+                        showSection("members");
+                    } else {
+                        alert(res.message || "เข้าสู่ระบบไม่สำเร็จ");
+                    }
+                });
+            return false;
+        }
+        function logout() {
+            localStorage.removeItem("user");
+            SESSION_ID = null;
+            document.getElementById("main-navbar").style.display = "none";
+            showSection("login");
+        }
+
+        // --- Helper: Add sessionId to every request ---
+        function withSession(url) {
+            if (!SESSION_ID) {
+                const user = localStorage.getItem("user");
+                if (user) {
+                    try { SESSION_ID = JSON.parse(user).sessionId; } catch { }
+                }
+            }
+            if (SESSION_ID) {
+                return url + (url.includes('?') ? '&' : '?') + 'sessionId=' + encodeURIComponent(SESSION_ID);
+            }
+            return url;
+        }
+
+        // --- Members List Pagination ---
+        let membersData = [];
+        let membersPage = 1;
+        const membersPageSize = 10;
+        function loadMembers(page = 1) {
+            const search = document.getElementById("search-member").value.trim();
+            const tbody = document.getElementById("members-table");
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center"><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Loading...</span></div></td></tr>`;
+            fetch(withSession(APP_SCRIPT_URL + "?action=get_members&search=" + encodeURIComponent(search)))
+                .then(r => r.json())
+                .then(res => {
+                    tbody.innerHTML = "";
+                    if (res.success && res.members.length) {
+                        membersData = res.members;
+                        membersPage = page;
+                        const totalPages = Math.ceil(membersData.length / membersPageSize);
+                        const pageData = paginate(membersData, membersPage, membersPageSize);
+                        pageData.forEach(m => {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td>${m.id}</td>
+                                <td>${m.name}</td>
+                                <td>${m.moo}</td>
+                                <td><button class="btn btn-sm btn-outline-primary" onclick="showMemberDetail('${m.id}')"><i class="bi bi-eye"></i> ดูข้อมูล</button></td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                        renderPaginationControls('members-pagination', membersPage, totalPages, 'changeMembersPage');
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">ไม่พบข้อมูล</td></tr>`;
+                        renderPaginationControls('members-pagination', 1, 1, 'changeMembersPage');
+                    }
+                });
+        }
+        function changeMembersPage(page) {
+            if (page < 1) return;
+            const totalPages = Math.ceil(membersData.length / membersPageSize);
+            if (page > totalPages) return;
+            loadMembers(page);
+        }
+
+        // --- Deposit Table Pagination ---
+        let depositData = [];
+        let depositPage = 1;
+        const depositPageSize = 10;
+        function loadDepositTable(page = 1) {
+            const month = document.getElementById("deposit-month").value;
+            const year = document.getElementById("deposit-year").value;
+            const monthYear = month + "/" + year;
+            const tbody = document.getElementById("deposit-table");
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center"><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Loading...</span></div></td></tr>`;
+            const daysInMonth = new Date(Number(year), Number(month), 0).getDate();
+            document.getElementById("deposit-amount-label").innerText = `ยอดที่ต้องฝาก : ${daysInMonth.toLocaleString()} บาท`;
+            fetch(withSession(APP_SCRIPT_URL + "?action=get_deposits&monthYear=" + encodeURIComponent(monthYear)))
+                .then(r => r.json())
+                .then(res => {
+                    tbody.innerHTML = "";
+                    if (!res.success) {
+                        showAlertModal("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+                        renderPaginationControls('deposit-pagination', 1, 1, 'changeDepositPage');
+                        return;
+                    }
+                    depositData = res.members;
+                    depositPage = page;
+                    const totalPages = Math.ceil(depositData.length / depositPageSize);
+                    const pageData = paginate(depositData, depositPage, depositPageSize);
+                    pageData.forEach(m => {
+                        const btn = m.deposited
+                            ? `<button class=\"btn btn-sm btn-success\" disabled><i class=\"bi bi-check-circle\"></i> ฝากแล้ว</button>`
+                            : `<button class=\"btn btn-sm btn-primary\" onclick=\"doDeposit('${m.id}','${monthYear}', this)\"><i class=\"bi bi-cash-coin\"></i> ฝากเงิน</button>`;
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td>${m.id}</td>
+                            <td>${m.name}</td>
+                            <td>${m.moo}</td>
+                            <td>${btn}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    renderPaginationControls('deposit-pagination', depositPage, totalPages, 'changeDepositPage');
+                });
+        }
+        function changeDepositPage(page) {
+            if (page < 1) return;
+            const totalPages = Math.ceil(depositData.length / depositPageSize);
+            if (page > totalPages) return;
+            loadDepositTable(page);
+        }
+
+        // --- Summary Table Pagination ---
+        let summaryData = [];
+        let summaryPage = 1;
+        const summaryPageSize = 12;
+        function loadSummary(page = 1) {
+            const tbody = document.getElementById("summary-table");
+            tbody.innerHTML = `<tr><td colspan="2" class="text-center"><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Loading...</span></div></td></tr>`;
+            fetch(withSession(APP_SCRIPT_URL + "?action=summary"))
+                .then(r => r.json())
+                .then(res => {
+                    tbody.innerHTML = "";
+                    if (res.success && res.summary.length) {
+                        summaryData = res.summary;
+                        summaryPage = page;
+                        const totalPages = Math.ceil(summaryData.length / summaryPageSize);
+                        const pageData = paginate(summaryData, summaryPage, summaryPageSize);
+                        pageData.forEach(s => {
+                            tbody.innerHTML += `<tr>
+                                <td>${s.monthYear === 'ยอดยกมา' ? s.monthYear : formatMonthYear(s.monthYear)}</td>
+                                <td class="text-end">${formatBaht(s.total)}</td>
+                            </tr>`;
+                        });
+                        document.getElementById("summary-total").innerText = formatBaht(res.total);
+                        renderPaginationControls('summary-pagination', summaryPage, totalPages, 'changeSummaryPage');
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="2" class="text-center text-muted">ไม่พบข้อมูล</td></tr>`;
+                        document.getElementById("summary-total").innerText = "-";
+                        renderPaginationControls('summary-pagination', 1, 1, 'changeSummaryPage');
+                    }
+                });
+        }
+        function changeSummaryPage(page) {
+            if (page < 1) return;
+            const totalPages = Math.ceil(summaryData.length / summaryPageSize);
+            if (page > totalPages) return;
+            loadSummary(page);
+        }
+
+        // --- Pagination Helper ---
+        function paginate(array, page, pageSize) {
+            const start = (page - 1) * pageSize;
+            return array.slice(start, start + pageSize);
+        }
+
+        // --- Render Pagination Controls ---
+        function renderPaginationControls(containerId, currentPage, totalPages, onPageChange) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            let html = '';
+            if (totalPages > 1) {
+                html += `<nav aria-label="Page navigation"><ul class="pagination justify-content-center mb-0">`;
+                // First button
+                html += `<li class="page-item${currentPage === 1 ? ' disabled' : ''}">` +
+                    `<a class="page-link" href="#" tabindex="-1" aria-label="First" onclick="${onPageChange}(1);return false;">` +
+                    `<span aria-hidden="true">&laquo;&laquo;</span>` +
+                    `</a></li>`;
+                // Previous button
+                html += `<li class="page-item${currentPage === 1 ? ' disabled' : ''}">` +
+                    `<a class="page-link" href="#" tabindex="-1" aria-label="Previous" onclick="${onPageChange}(${currentPage - 1});return false;">` +
+                    `<span aria-hidden="true">&laquo;</span>` +
+                    `</a></li>`;
+                // Page numbers with ellipsis
+                if (totalPages <= 7) {
+                    for (let i = 1; i <= totalPages; i++) {
+                        html += `<li class="page-item${i === currentPage ? ' active' : ''}">` +
+                            `<a class="page-link" href="#" onclick="${onPageChange}(${i});return false;">${i}</a></li>`;
+                    }
+                } else {
+                    html += `<li class="page-item${1 === currentPage ? ' active' : ''}"><a class="page-link" href="#" onclick="${onPageChange}(1);return false;">1</a></li>`;
+                    html += `<li class="page-item${2 === currentPage ? ' active' : ''}"><a class="page-link" href="#" onclick="${onPageChange}(2);return false;">2</a></li>`;
+                    if (currentPage > 4) {
+                        html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    }
+                    let start = Math.max(3, currentPage - 1);
+                    let end = Math.min(totalPages - 2, currentPage + 1);
+                    for (let i = start; i <= end; i++) {
+                        html += `<li class="page-item${i === currentPage ? ' active' : ''}"><a class="page-link" href="#" onclick="${onPageChange}(${i});return false;">${i}</a></li>`;
+                    }
+                    if (currentPage < totalPages - 3) {
+                        html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    }
+                    html += `<li class="page-item${(totalPages - 1) === currentPage ? ' active' : ''}"><a class="page-link" href="#" onclick="${onPageChange}(${totalPages - 1});return false;">${totalPages - 1}</a></li>`;
+                    html += `<li class="page-item${totalPages === currentPage ? ' active' : ''}"><a class="page-link" href="#" onclick="${onPageChange}(${totalPages});return false;">${totalPages}</a></li>`;
+                }
+                // Next button
+                html += `<li class="page-item${currentPage === totalPages ? ' disabled' : ''}">` +
+                    `<a class="page-link" href="#" aria-label="Next" onclick="${onPageChange}(${currentPage + 1});return false;">` +
+                    `<span aria-hidden="true">&raquo;</span>` +
+                    `</a></li>`;
+                // Last button
+                html += `<li class="page-item${currentPage === totalPages ? ' disabled' : ''}">` +
+                    `<a class="page-link" href="#" aria-label="Last" onclick="${onPageChange}(${totalPages});return false;">` +
+                    `<span aria-hidden="true">&raquo;&raquo;</span>` +
+                    `</a></li>`;
+                html += `</ul></nav>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // === Alert Modal ===
+        function showAlertModal(msg) {
+            let modal = document.getElementById('alertModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'alertModal';
+                modal.innerHTML = `
+                <div class="modal fade" tabindex="-1" id="alertModalDialog">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">แจ้งเตือน</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div id="alertModalMsg"></div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">ตกลง</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>`;
+                document.body.appendChild(modal);
+            }
+            document.getElementById('alertModalMsg').innerText = msg;
+            const modalDialog = new bootstrap.Modal(document.getElementById('alertModalDialog'));
+            modalDialog.show();
+        }
+        function doDeposit(id, monthYear, btn) {
+            btn.disabled = true;
+            fetch(withSession(APP_SCRIPT_URL + "?action=deposit&id=" + encodeURIComponent(id) + "&monthYear=" + encodeURIComponent(monthYear)))
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        btn.classList.remove("btn-primary");
+                        btn.classList.add("btn-success");
+                        btn.innerHTML = `<i class="bi bi-check-circle"></i> ฝากแล้ว`;
+                    } else {
+                        showAlertModal(res.message || "ฝากเงินไม่สำเร็จ\n(ฝากได้เดือนละ 1 ครั้งต่อคน)");
+                        btn.disabled = false;
+                    }
+                });
+        }
+
+        // --- แปลงเดือน/ปี เป็นภาษาไทย ---
+        function formatMonthYear(monthYear) {
+            if (!monthYear) return "";
+            // ถ้าเป็น Date string เช่น "Wed Jan 01 2025 00:00:00 GMT+0700 (เวลาอินโดจีน)"
+            if (isNaN(monthYear) && monthYear.match(/^[A-Za-z]{3} /)) {
+                const d = new Date(monthYear);
+                if (!isNaN(d.getTime())) {
+                    const m = d.getMonth() + 1;
+                    const y = d.getFullYear();
+                    const thMonths = ["", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+                    return `${thMonths[m]} ${y + 543}`;
+                }
+            }
+            // เดิม: "01/2025" หรือ "1/2025"
+            let [mm, yyyy] = monthYear.split("/");
+            if (!mm || !yyyy) return monthYear;
+            mm = mm.replace(/^0+/, ""); // remove leading zeros
+            if (mm.length === 0) mm = "0";
+            const m = Number(mm);
+            const y = Number(yyyy);
+            if (!Number.isInteger(m) || !Number.isInteger(y) || m < 1 || m > 12) return monthYear;
+            const thMonths = ["", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+            return `${thMonths[m]} ${y + 543}`;
+        }
+
+        // --- Format number as x,xxx.xx ---
+        function formatBaht(num) {
+            if (typeof num !== 'number') num = Number(num);
+            if (isNaN(num)) return '-';
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // === Year Dropdown ===
+        function fillYearDropdown() {
+            const yearSel = document.getElementById("deposit-year");
+            const now = new Date();
+            const thisYear = now.getFullYear();
+            yearSel.innerHTML = "";
+            for (let y = thisYear - 2; y <= thisYear + 1; y++) {
+                yearSel.innerHTML += `<option value="${y}" ${y === thisYear ? "selected" : ""}>${y + 543}</option>`;
+            }
+        }
+
+        // === On Load ===
+        window.onload = function () {
+            fillYearDropdown();
+            const navbar = document.getElementById("main-navbar");
+            const user = localStorage.getItem("user");
+            if (user) {
+                try { SESSION_ID = JSON.parse(user).sessionId; } catch { }
+                navbar.style.display = "";
+                showSection("members");
+            } else {
+                navbar.style.display = "none";
+                showSection("login");
+            }
+        }
+    </script>
+</body>
+
+</html>
