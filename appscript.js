@@ -41,6 +41,9 @@ function handleRequest(e) {
       case 'summary':
         result = summary(e);
         break;
+      case 'undo_deposit':
+        result = undoDeposit(e);
+        break;
       default:
         result = { success: false, message: 'Invalid action' };
     }
@@ -236,7 +239,48 @@ function deposit(e) {
   return { success: true, message: 'ฝากเงินสำเร็จ', amount: days };
 }
 
-// 8. Summary by month
+// 8. Undo deposit for a member (delete deposit row)
+function undoDeposit(e) {
+  requireAuth(e);
+  const id = e.parameter.id;
+  const monthYear = e.parameter.monthYear;
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEET_DEPOSIT);
+  const data = sheet.getDataRange().getValues();
+  // Normalize monthYear for comparison (always MM/YYYY)
+  function normalizeMonthYear(val) {
+    if (!val) return '';
+    if (typeof val === 'string' && val.includes('/')) {
+      let [mm, yyyy] = val.split('/');
+      mm = mm.padStart(2, '0');
+      return mm + '/' + yyyy;
+    }
+    if (Object.prototype.toString.call(val) === '[object Date]' && !isNaN(val.getTime())) {
+      let mm = (val.getMonth() + 1).toString().padStart(2, '0');
+      let yyyy = val.getFullYear();
+      return mm + '/' + yyyy;
+    }
+    if (typeof val !== 'string') val = String(val);
+    var d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      let mm = (d.getMonth() + 1).toString().padStart(2, '0');
+      let yyyy = d.getFullYear();
+      return mm + '/' + yyyy;
+    }
+    return val;
+  }
+  const normMonthYear = normalizeMonthYear(monthYear);
+  for (let i = 1; i < data.length; i++) {
+    const depositId = String(data[i][0]);
+    const depositMonthYear = normalizeMonthYear(data[i][1]);
+    if (depositId === String(id) && depositMonthYear === normMonthYear) {
+      sheet.deleteRow(i + 1); // +1 because sheet is 1-based and skip header
+      return { success: true, message: 'ยกเลิกรายการฝากเงินสำเร็จ' };
+    }
+  }
+  return { success: false, message: 'ไม่พบรายการฝากเงินนี้' };
+}
+
+// 9. Summary by month
 function summary(e) {
   requireAuth(e);
   const sheet = SpreadsheetApp.getActive().getSheetByName(SHEET_DEPOSIT);

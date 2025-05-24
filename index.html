@@ -158,6 +158,8 @@
                                 <th>เลขที่</th>
                                 <th>ชื่อ-นามสกุล</th>
                                 <th>หมู่ที่</th>
+                                <th>อายุ</th>
+                                <th>อายุสมาชิก</th>
                                 <th>ดูข้อมูล</th>
                             </tr>
                         </thead>
@@ -316,6 +318,7 @@
                                 <th>เลขที่</th>
                                 <th>ชื่อ-นามสกุล</th>
                                 <th>หมู่ที่</th>
+                                <th>สถานะ</th>
                                 <th>ฝากเงิน</th>
                             </tr>
                         </thead>
@@ -403,7 +406,7 @@
                         SESSION_ID = res.sessionId;
                         showSection("members");
                     } else {
-                        alert(res.message || "เข้าสู่ระบบไม่สำเร็จ");
+                        showAlertModal(res.message || "เข้าสู่ระบบไม่สำเร็จ");
                     }
                 });
             return false;
@@ -436,7 +439,7 @@
         function loadMembers(page = 1) {
             const search = document.getElementById("search-member").value.trim();
             const tbody = document.getElementById("members-table");
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center"><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Loading...</span></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center"><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Loading...</span></div></td></tr>`;
             fetch(withSession(APP_SCRIPT_URL + "?action=get_members&search=" + encodeURIComponent(search)))
                 .then(r => r.json())
                 .then(res => {
@@ -453,13 +456,15 @@
                                 <td>${m.id}</td>
                                 <td>${m.name}</td>
                                 <td>${m.moo}</td>
+                                <td>${m.dob ? calcAge(m.dob) : '-'}</td>
+                                <td>${m.regdate ? calcAge(m.regdate) : '-'}</td>
                                 <td><button class="btn btn-sm btn-outline-primary" onclick="showMemberDetail('${m.id}')"><i class="bi bi-eye"></i> ดูข้อมูล</button></td>
                             `;
                             tbody.appendChild(tr);
                         });
                         renderPaginationControls('members-pagination', membersPage, totalPages, 'changeMembersPage');
                     } else {
-                        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">ไม่พบข้อมูล</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">ไม่พบข้อมูล</td></tr>`;
                         renderPaginationControls('members-pagination', 1, 1, 'changeMembersPage');
                     }
                 });
@@ -480,7 +485,7 @@
             const year = document.getElementById("deposit-year").value;
             const monthYear = month + "/" + year;
             const tbody = document.getElementById("deposit-table");
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center"><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Loading...</span></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center"><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Loading...</span></div></td></tr>`;
             const daysInMonth = new Date(Number(year), Number(month), 0).getDate();
             document.getElementById("deposit-amount-label").innerText = `ยอดที่ต้องฝาก : ${daysInMonth.toLocaleString()} บาท`;
             fetch(withSession(APP_SCRIPT_URL + "?action=get_deposits&monthYear=" + encodeURIComponent(monthYear)))
@@ -498,17 +503,31 @@
                     const totalPages = Math.ceil(depositData.length / depositPageSize);
                     const pageData = paginate(depositData, depositPage, depositPageSize);
                     pageData.forEach(m => {
-                        const btn = m.deposited
-                            ? `<button class=\"btn btn-sm btn-success\" disabled><i class=\"bi bi-check-circle\"></i> ฝากแล้ว</button>`
-                            : `<button class=\"btn btn-sm btn-primary\" onclick=\"doDeposit('${m.id}','${monthYear}', this)\"><i class=\"bi bi-cash-coin\"></i> ฝากเงิน</button>`;
+                        let statusText = m.deposited ? '<span class="text-success fw-bold">ฝากแล้ว</span>' : '<span class="text-danger">ยังไม่ฝาก</span>';
+                        // ใช้ data-attribute และ eventListener แทน onclick string เพื่อป้องกัน scope bug
                         const tr = document.createElement("tr");
                         tr.innerHTML = `
                             <td>${m.id}</td>
                             <td>${m.name}</td>
                             <td>${m.moo}</td>
-                            <td>${btn}</td>
+                            <td>${statusText}</td>
+                            <td><button class="btn btn-sm ${m.deposited ? 'btn-danger' : 'btn-primary'} deposit-action-btn" data-id="${m.id}" data-monthyear="${monthYear}" data-action="${m.deposited ? 'undo' : 'deposit'}">
+                                <i class="bi ${m.deposited ? 'bi-x-circle' : 'bi-cash-coin'}"></i> ${m.deposited ? 'ยกเลิกฝาก' : 'ฝากเงิน'}
+                            </button></td>
                         `;
                         tbody.appendChild(tr);
+                    });
+                    // Attach event listeners after rendering
+                    tbody.querySelectorAll('.deposit-action-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const id = this.getAttribute('data-id');
+                            const monthYear = this.getAttribute('data-monthyear');
+                            if (this.getAttribute('data-action') === 'deposit') {
+                                doDeposit(id, monthYear, this);
+                            } else {
+                                undoDeposit(id, monthYear, this);
+                            }
+                        });
                     });
                     renderPaginationControls('deposit-pagination', depositPage, totalPages, 'changeDepositPage');
                 });
@@ -528,7 +547,7 @@
             const tbody = document.getElementById("summary-table");
             tbody.innerHTML = `<tr><td colspan="2" class="text-center"><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Loading...</span></div></td></tr>`;
             fetch(withSession(APP_SCRIPT_URL + "?action=summary"))
-                .then(r => r.json())
+                .then (r => r.json())
                 .then(res => {
                     if (handleApiError(res)) return;
                     tbody.innerHTML = "";
@@ -557,6 +576,19 @@
             const totalPages = Math.ceil(summaryData.length / summaryPageSize);
             if (page > totalPages) return;
             loadSummary(page);
+        }
+
+        // --- Helper: Calculate age from date string (yyyy-mm-dd) ---
+        function calcAge(dateStr) {
+            if (!dateStr) return '';
+            const today = new Date();
+            const dob = new Date(dateStr);
+            let age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+            return age;
         }
 
         // --- Pagination Helper ---
@@ -649,6 +681,42 @@
             const modalDialog = new bootstrap.Modal(document.getElementById('alertModalDialog'));
             modalDialog.show();
         }
+        // === Confirm Modal ===
+        function showConfirmModal(msg, onConfirm) {
+            let modal = document.getElementById('confirmModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'confirmModal';
+                modal.innerHTML = `
+                <div class="modal fade" tabindex="-1" id="confirmModalDialog">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">ยืนยัน</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div id="confirmModalMsg"></div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="button" class="btn btn-danger" id="confirmModalOkBtn">ตกลง</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>`;
+                document.body.appendChild(modal);
+            }
+            document.getElementById('confirmModalMsg').innerText = msg;
+            const modalDialog = new bootstrap.Modal(document.getElementById('confirmModalDialog'));
+            const okBtn = document.getElementById('confirmModalOkBtn');
+            // Remove previous event
+            okBtn.onclick = function () {
+                modalDialog.hide();
+                if (typeof onConfirm === 'function') onConfirm();
+            };
+            modalDialog.show();
+        }
         function doDeposit(id, monthYear, btn) {
             btn.disabled = true;
             fetch(withSession(APP_SCRIPT_URL + "?action=deposit&id=" + encodeURIComponent(id) + "&monthYear=" + encodeURIComponent(monthYear)))
@@ -656,14 +724,33 @@
                 .then(res => {
                     if (handleApiError(res)) return;
                     if (res.success) {
-                        btn.classList.remove("btn-primary");
-                        btn.classList.add("btn-success");
-                        btn.innerHTML = `<i class="bi bi-check-circle"></i> ฝากแล้ว`;
+                        // หลังฝากเงินสำเร็จ โหลดตารางใหม่เพื่อรีเฟรชปุ่มและสถานะ
+                        showAlertModal('ฝากเงินสำเร็จ');
+                        loadDepositTable(depositPage);
                     } else {
                         showAlertModal(res.message || "ฝากเงินไม่สำเร็จ\n(ฝากได้เดือนละ 1 ครั้งต่อคน)");
                         btn.disabled = false;
                     }
                 });
+        }
+
+        // --- Undo Deposit ---
+        function undoDeposit(id, monthYear, btn) {
+            showConfirmModal('ต้องการยกเลิกรายการฝากเงินนี้ใช่หรือไม่?', function () {
+                btn.disabled = true;
+                fetch(withSession(APP_SCRIPT_URL + `?action=undo_deposit&id=${encodeURIComponent(id)}&monthYear=${encodeURIComponent(monthYear)}`))
+                    .then(r => r.json())
+                    .then(res => {
+                        if (handleApiError(res)) return;
+                        if (res.success) {
+                            showAlertModal('ยกเลิกรายการฝากเงินสำเร็จ');
+                            loadDepositTable(depositPage);
+                        } else {
+                            showAlertModal(res.message || 'ไม่สามารถยกเลิกรายการได้');
+                            btn.disabled = false;
+                        }
+                    });
+            });
         }
 
         // --- แปลงเดือน/ปี เป็นภาษาไทย ---
@@ -741,7 +828,7 @@
                 localStorage.removeItem('user');
                 SESSION_ID = null;
                 showSection('login');
-                alert('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');
+                showAlertModal('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');
                 return true;
             }
             return false;
